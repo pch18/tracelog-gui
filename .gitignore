@@ -27,3 +27,4 @@ __debug_*
 /cfg
 
 srv/web
+srv/trace-gui

@@ -238,11 +238,22 @@ export const SearchBar: FC<{
 
         <Form.Item
           shouldUpdate={(prev, next) => prev.kind !== next.kind}
-          label="选项"
+          noStyle
         >
-          <Form.Item noStyle field="useRegex" triggerPropName="checked">
-            <Checkbox>模糊匹配（使用正则）</Checkbox>
-          </Form.Item>
+          {(formData) => {
+            if (!formData.kind) {
+              return null;
+            }
+            return (
+              <Form.Item
+                label="选项"
+                field="useRegex"
+                triggerPropName="checked"
+              >
+                <Checkbox>模糊匹配（使用正则）</Checkbox>
+              </Form.Item>
+            );
+          }}
         </Form.Item>
 
         <div className="w-full flex justify-end gap-4">
