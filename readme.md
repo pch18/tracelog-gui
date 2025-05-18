@@ -21,3 +21,7 @@ cd ..
 docker buildx create --use
 docker buildx build --platform=linux/amd64,linux/arm64 -t pch18/trace-gui . --push
 ```
+## 直接编译指定版本的 golang
+```
+GOOS=linux GOARCH=amd64 go build -o trace-gui main.go
+```

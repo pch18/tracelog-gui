@@ -24,9 +24,9 @@ func init() {
 
 	_userPass := os.Getenv("USER_PASS")
 	if _userPass != "" {
-		CurAuthWithHash = HashAuth(_userPass)
+		CurAuthWithHash = HashAuth(UserPass2Base64(_userPass))
 	} else {
-		CurAuthWithHash = HashAuth(initUserPass)
+		CurAuthWithHash = HashAuth(UserPass2Base64(initUserPass))
 	}
 }
 
@@ -35,13 +35,16 @@ func SignCookie(c *gin.Context, hash string) {
 		"/", "", false, true)
 }
 
-func HashAuth(input string) string {
-	inputByte := []byte(input)
+func HashAuth(input []byte) string {
+	hash := md5.Sum(append(AuthHashKey, input...))
+	return hex.EncodeToString(hash[:])
+}
+
+func UserPass2Base64(userPass string) []byte {
+	inputByte := []byte(userPass)
 	inputB64 := make([]byte, base64.StdEncoding.EncodedLen(len(inputByte)))
 	base64.StdEncoding.Encode(inputB64, inputByte)
-
-	hash := md5.Sum(append(AuthHashKey, inputB64...))
-	return hex.EncodeToString(hash[:])
+	return inputB64
 }
 
 func AuthMiddleWare(c *gin.Context) {

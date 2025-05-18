@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"trace-gui/ctl"
+	"trace-gui/pkg"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -42,7 +43,7 @@ func main() {
 	router.POST("/api/v1/logout", ctl.Logout)
 
 	apiRouter := router.Group("/api/v1/")
-	// apiRouter.Use(pkg.AuthMiddleWare)
+	apiRouter.Use(pkg.AuthMiddleWare)
 
 	apiRouter.POST("/search_by_id", ctl.SearchById)
 	apiRouter.POST("/search_by_cond", ctl.SearchByCond)

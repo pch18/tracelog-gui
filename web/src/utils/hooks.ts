@@ -2,6 +2,7 @@ import { createGlobalStore, createStore } from "hox";
 import { useEffect, useState } from "react";
 import { request } from "./request";
 import { useRequest } from "ahooks";
+import { useLocation } from "react-router-dom";
 
 export const useStateStore = <T>(value: T, key: string) => {
   const [state, setState] = useState<T>(() => {
@@ -22,6 +23,10 @@ export const useStateStore = <T>(value: T, key: string) => {
 };
 
 export const [useSys] = createGlobalStore(() => {
-  const { data } = useRequest(request.getSys, { pollingInterval: 30000 });
+  const location = useLocation();
+  const { data } = useRequest(request.getSys, {
+    pollingInterval: 30000,
+    ready: location.pathname !== "/login",
+  });
   return data;
 });

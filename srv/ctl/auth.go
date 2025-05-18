@@ -24,7 +24,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	hashAuth := pkg.HashAuth(auth)
+	hashAuth := pkg.HashAuth([]byte(auth))
 	if hashAuth != pkg.CurAuthWithHash {
 		c.JSON(http.StatusOK, gin.H{
 			"err": "Wrong auth",
