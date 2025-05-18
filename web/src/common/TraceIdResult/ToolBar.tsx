@@ -1,10 +1,5 @@
 import { Badge, Button, Checkbox, Icon, Tag } from "@arco-design/web-react";
-import {
-  EasLogLevel,
-  EasLogLevelColorMap,
-  EasLogLevelIconMap,
-  type EasLog,
-} from "../interface";
+import { EasLogLevel, EasLogLevelColorMap, type EasLog } from "../interface";
 import { useMemo, type FC } from "react";
 import clsx from "clsx";
 import { LevelTag } from "./LevelTag";

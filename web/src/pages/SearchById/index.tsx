@@ -1,15 +1,24 @@
-import { Button, Input, Message, Tabs } from "@arco-design/web-react";
-import { useState } from "react";
+import { Button, Input, Tabs } from "@arco-design/web-react";
 import { checkTraceId } from "./utils";
 import { TraceIdResult } from "@/common/TraceIdResult";
+import { useStateStore } from "@/utils/hooks";
+
+const STORE_SEARCH_BY_ID_1 = "STORE_SEARCH_BY_ID_1";
+const STORE_SEARCH_BY_ID_2 = "STORE_SEARCH_BY_ID_2";
+const STORE_SEARCH_BY_ID_3 = "STORE_SEARCH_BY_ID_3";
+const STORE_SEARCH_BY_ID_4 = "STORE_SEARCH_BY_ID_4";
 
 export default function () {
-  const [traceId, setTraceId] = useState("8z0gon02bo7javo7");
-
-  const [tabs, setTabs] = useState<string[]>(["8z0gon02bo7javo7"]);
-
-  const [activeTab, setActiveTab] = useState("8z0gon02bo7javo7");
-  const [refreshKey, setRefreshKey] = useState<Record<string, number>>({});
+  const [traceId, setTraceId] = useStateStore("", STORE_SEARCH_BY_ID_1);
+  const [tabs, setTabs] = useStateStore<string[]>([], STORE_SEARCH_BY_ID_2);
+  const [activeTab, setActiveTab] = useStateStore<string | undefined>(
+    undefined,
+    STORE_SEARCH_BY_ID_3
+  );
+  const [refreshKey, setRefreshKey] = useStateStore<Record<string, number>>(
+    {},
+    STORE_SEARCH_BY_ID_4
+  );
 
   const handleSearch = () => {
     if (!checkTraceId(traceId)) {
@@ -23,6 +32,11 @@ export default function () {
     });
     setActiveTab(traceId);
     setRefreshKey((_k) => ({ ..._k, [traceId]: (_k[traceId] || 0) + 1 }));
+  };
+
+  const handleClear = () => {
+    setTabs([]);
+    setActiveTab(undefined);
   };
 
   return (
@@ -56,13 +70,36 @@ export default function () {
         tabPosition="left"
         className="font-mono flex-1"
         css={`
-          .arco-tabs-content {
-            overflow: auto;
+          .arco-tabs-content-inner,
+          .arco-tabs-pane {
+            height: 100%;
           }
-          .arco-tabs-content-item-active {
-            overflow: visible;
+          // .arco-tabs-content {
+          //   overflow: auto;
+          // }
+          // .arco-tabs-content-item-active {
+          //   overflow: visible;
+          // }
+          .arco-tabs-header-nav {
+            width: 108px;
+          }
+          .arco-tabs-header-extra {
+            width: 100%;
+            padding: 0 12px;
           }
         `}
+        extra={
+          tabs?.length ? (
+            <Button
+              size="small"
+              type="secondary"
+              className="w-full"
+              onClick={handleClear}
+            >
+              清空
+            </Button>
+          ) : undefined
+        }
       >
         {tabs.map((tab) => (
           <Tabs.TabPane

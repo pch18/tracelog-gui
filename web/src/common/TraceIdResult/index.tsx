@@ -6,20 +6,32 @@ import { calcProc } from "./utils";
 import { CollapseLog } from "./CollapseLog";
 import { ToolBar } from "./ToolBar";
 import { request } from "@/utils/request";
+import { Spin } from "@arco-design/web-react";
+import clsx from "clsx";
 
 export const TraceIdResult: FC<{ traceId: string; className?: string }> = ({
   traceId,
   className,
 }) => {
-  const { data: logs, loading } = useRequest(async () => {
+  const {
+    data: logs,
+    loading,
+    error,
+  } = useRequest(async () => {
     const _logs = await request.SearchById(traceId);
     _logs.sort((s1, s2) => s1.time - s2.time);
     return _logs;
   });
 
   return (
-    <div className={className}>
-      {loading ? <div>loading</div> : <Content logs={logs || []} />}
+    <div className={clsx(className, "flex flex-col h-full")}>
+      {loading ? (
+        <Spin />
+      ) : error ? (
+        <div>error</div>
+      ) : (
+        <Content logs={logs || []} />
+      )}
     </div>
   );
 };
@@ -69,7 +81,7 @@ const Content: FC<{ logs: EasLog[] }> = ({ logs }) => {
 
   return (
     <>
-      <div className="sticky top-0 bg-color-bg-1 z-10">
+      <div className="flex-none bg-color-bg-1">
         <GraphProc
           procList={procList}
           select={select}
@@ -84,7 +96,9 @@ const Content: FC<{ logs: EasLog[] }> = ({ logs }) => {
         />
       </div>
 
-      <CollapseLog logs={curLogs} filterLevels={filterLevels} />
+      <div className="overflow-auto flex-auto">
+        <CollapseLog logs={curLogs} filterLevels={filterLevels} />
+      </div>
     </>
   );
 };

@@ -1,18 +1,17 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
+	"embed"
+	"io/fs"
+	"net/http"
 	"trace-gui/ctl"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	// webDir = "/web"
-	webDir = "/Users/pch18/Codes/git.easit.jp/tracelog-gui/web/dist"
-)
+//go:embed web/*
+var webEmbedFs embed.FS
 
 func main() {
 
@@ -21,21 +20,22 @@ func main() {
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
+	webFs, err := fs.Sub(webEmbedFs, "web")
+	if err != nil {
+		panic(err)
+	}
+	webHttpFs := http.FileServer(http.FS(webFs))
+
 	router.Use(func(c *gin.Context) {
-		if len(c.Request.URL.Path) >= 4 && c.Request.URL.Path[:4] == "/api" {
+		if len(c.Request.URL.Path) >= 5 && c.Request.URL.Path[:5] == "/api/" {
 			c.Next()
 			return
 		}
 
-		path := filepath.Join(webDir, filepath.Clean(c.Request.URL.Path))
-		if _, err := filepath.Rel(webDir, path); err == nil {
-			if _, err := os.Stat(path); err == nil {
-				c.File(path)
-				return
-			}
+		if _, err := webFs.Open(c.Request.URL.Path[1:]); err != nil {
+			c.Request.URL.Path = "/"
 		}
-
-		c.File(webDir + "/index.html")
+		webHttpFs.ServeHTTP(c.Writer, c.Request)
 	})
 
 	router.POST("/api/v1/login", ctl.Login)
@@ -49,5 +49,5 @@ func main() {
 	apiRouter.POST("/get_sys", ctl.GetSys)
 
 	// 启动 HTTP 服务，监听在 7777 端口
-	router.Run(":7777")
+	router.Run(":80")
 }

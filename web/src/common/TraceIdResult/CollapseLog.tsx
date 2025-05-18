@@ -1,4 +1,4 @@
-import { Collapse, Tag } from "@arco-design/web-react";
+import { Button, Collapse, Link, Tag } from "@arco-design/web-react";
 import {
   type EasLogLevel,
   type EasLog,
@@ -7,29 +7,31 @@ import {
 } from "../interface";
 import { useMemo, type FC } from "react";
 import dayjs from "dayjs";
-import { Field, JsonViewer, LogDataViewer, logPreviewString } from "./viewer";
+import { Field, LogDataViewer, logPreviewString } from "./viewer";
 import { Stack } from "./Stack";
 import { LevelTag } from "./LevelTag";
-import { getColor, type Proc } from "./utils";
-import {
-  IconReply,
-  IconSend,
-  IconSkipNextFill,
-  IconSkipPreviousFill,
-} from "@arco-design/web-react/icon";
+import { IconSend } from "@arco-design/web-react/icon";
 import clsx from "clsx";
+import { openTraceId } from "./openTraceId";
 
 export const CollapseLog: FC<{
   logs: EasLog[];
   filterLevels: EasLogLevel[];
-}> = ({ logs: _logs, filterLevels }) => {
-  const logs = useMemo(
-    () =>
-      !filterLevels.length
-        ? _logs
-        : _logs.filter((s) => filterLevels.includes(s.level)),
-    [_logs, filterLevels]
-  );
+  showTraceId?: boolean;
+}> = ({ logs: _logs, filterLevels, showTraceId }) => {
+  const logs = useMemo(() => {
+    const l = !filterLevels.length
+      ? _logs
+      : _logs.filter((s) => filterLevels.includes(s.level));
+
+    // todo: 后端还没完全升级，临时处理下
+    l.forEach((l) => {
+      if (!l.data) {
+        l.data = l.logs;
+      }
+    });
+    return l;
+  }, [_logs, filterLevels]);
 
   return (
     <Collapse
@@ -85,6 +87,27 @@ export const CollapseLog: FC<{
             }
             className="break-all"
           >
+            {showTraceId ? (
+              <Field name="Trace">
+                {log.traceid ? (
+                  <div className="flex items-center gap-1">
+                    {log.traceid}
+                    <Button
+                      size="small"
+                      type="text"
+                      className="!px-1"
+                      onClick={() => {
+                        void openTraceId({ id: log.traceid });
+                      }}
+                    >
+                      预览
+                    </Button>
+                  </div>
+                ) : (
+                  "无"
+                )}
+              </Field>
+            ) : null}
             <LogDataViewer log={log} />
             <Field name="调用栈">
               <Stack list={log.stack} className="flex-[2]" />

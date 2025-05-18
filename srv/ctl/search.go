@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 	"trace-gui/pkg"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ import (
 
 func writeResultToResponse(ctx *gin.Context, cursor *mongo.Cursor) {
 	isWrote := false
+	ctx.Header("Content-Type", "application/json")
 
 outerLoop:
 	for {
@@ -77,7 +79,7 @@ func SearchById(ctx *gin.Context) {
 
 	query := bson.M{"traceid": req.TraceId}
 
-	cursor, err := pkg.Coll_Log.Find(ctx, query)
+	cursor, err := pkg.Mongo_Collection.Find(ctx, query)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 			"err": "Find Failed",
@@ -98,8 +100,21 @@ func SearchByCond(ctx *gin.Context) {
 		return
 	}
 
-	cursor, err := pkg.Coll_Log.Find(ctx, query,
-		options.Find().SetLimit(101),
+	sort := -1
+	if timeCond, ok := query["time"].(map[string]interface{}); ok {
+		for key, value := range timeCond {
+			if timeInt, ok := value.(float64); ok {
+				parsedTime := time.Unix(int64(timeInt), 0)
+				timeCond[key] = parsedTime
+				if key == "$gt" || key == "$gte" {
+					sort = 1
+				}
+			}
+		}
+	}
+
+	cursor, err := pkg.Mongo_Collection.Find(ctx, query,
+		options.Find().SetLimit(101).SetSort(bson.M{"_id": sort}),
 	)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{

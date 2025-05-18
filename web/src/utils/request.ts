@@ -49,12 +49,14 @@ export const request = {
     return await customFetch<{ err?: string }>(`${baseUrl}/logout`, {});
   },
 
-  getSys: async (time: number) => {
+  getSys: async () => {
     return await customFetch<{
-      storage: number;
+      size: number;
       rows: number;
-    }>(`${baseUrl}/get_sys`, {
-      time,
-    });
+      rate: number;
+      start: number;
+      apps: string[];
+      srvs: string[];
+    }>(`${baseUrl}/get_sys`, {});
   },
 };

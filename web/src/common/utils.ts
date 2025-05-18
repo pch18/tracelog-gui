@@ -8,3 +8,7 @@ export const formatBytes = (bytes: number) => {
   const formattedBytes = (bytes / Math.pow(1024, i)).toFixed(i < 1 ? 0 : 1);
   return `${formattedBytes} ${sizes[i] || ""}`;
 };
+
+export const formatNumber = (number: number) => {
+  return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};

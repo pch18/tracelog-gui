@@ -54,6 +54,7 @@ export const calcProc = (logs: EasLog[]) => {
       }
     }
 
+    // todo: 这里有个问题，后端更新 去除 srv 的结尾数字
     const srvNoNum = log.app + log.srv.replace(/\d+$/, "");
     if (!srvIndMap[srvNoNum]) {
       srvIndMap[srvNoNum] = Object.keys(srvIndMap).length + 1;
