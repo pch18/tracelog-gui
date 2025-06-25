@@ -149,7 +149,7 @@ export const LogDataViewer: FC<{ log: EasLog }> = ({ log }): ReactNode => {
             <Field name="状态">{data.status}</Field>
             <Field name="错误">
               {data.errors?.length
-                ? data.errors.map((e, i) => <Block key={i} src={e} />)
+                ? data.errors.map((e, i) => <JsonViewer key={i} src={e} />)
                 : "空"}
             </Field>
             <Field name="响应">
