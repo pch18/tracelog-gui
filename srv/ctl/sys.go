@@ -1,12 +1,14 @@
 package ctl
 
 import (
+	"errors"
 	"net/http"
 	"time"
 	"trace-gui/pkg"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func GetSys(ctx *gin.Context) {
@@ -16,10 +18,16 @@ func GetSys(ctx *gin.Context) {
 	stats := bson.M{}
 	err := pkg.Mongo_Database.RunCommand(ctx, bson.M{"collStats": pkg.Mongo_Collection_Name}).Decode(&stats)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"err": "Get Collection Stats Failed",
-		})
-		return
+		var cmdErr mongo.CommandError
+		if errors.As(err, &cmdErr) && cmdErr.Code == 26 {
+			stats["size"] = int64(0)
+			stats["count"] = int64(0)
+		} else {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"err": "Get Collection Stats Failed",
+			})
+			return
+		}
 	}
 
 	result["size"] = stats["size"]
@@ -40,12 +48,17 @@ func GetSys(ctx *gin.Context) {
 	var firstDocument bson.M
 	err = pkg.Mongo_Collection.FindOne(ctx, bson.M{}).Decode(&firstDocument)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"err": "Get First Document Failed",
-		})
-		return
+		if err == mongo.ErrNoDocuments {
+			result["start"] = nil
+		} else {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"err": "Get First Document Failed",
+			})
+			return
+		}
+	} else {
+		result["start"] = firstDocument["time"]
 	}
-	result["start"] = firstDocument["time"]
 
 	// 5. 所有条目中，app这个字段去重后的结果，有哪些
 	result["apps"], err = pkg.Mongo_Collection.Distinct(ctx, "app", bson.M{})

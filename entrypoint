@@ -1,21 +1,73 @@
 #!/bin/sh
+set -e
 
-mkdir -p /nginx_logs
-mkdir -p /trace-gui/servers
-mkdir -p /trace-gui/certs
+mkdir -p /data/db
 
-echo "Starting Nginx ..."
-nginx
-if [ $? -ne 0 ]; then
-    echo "Failed to start Nginx ..."
-else
-    echo "Nginx running ..."
+: "${MONGO_USERNAME:=trace}"
+: "${MONGO_DATABASE:=trace}"
+: "${MONGO_COLLECTION:=log}"
+: "${MONGO_AUTH_SOURCE:=admin}"
+export MONGO_USERNAME MONGO_DATABASE
+
+if [ -z "${MONGO_PASSWORD:-}" ]; then
+    echo "MONGO_PASSWORD is required when MongoDB is exposed."
+    echo "Example: -e MONGO_PASSWORD='change_this_password'"
+    exit 1
+fi
+export MONGO_PASSWORD
+
+echo "Starting MongoDB for user initialization ..."
+mongod --dbpath /data/db --bind_ip 0.0.0.0 --fork --logpath /var/log/mongodb.log
+
+echo "Waiting for MongoDB ..."
+until mongosh --quiet --eval "db.adminCommand('ping').ok" >/dev/null 2>&1; do
+    sleep 1
+done
+
+echo "Creating or updating MongoDB user ..."
+mongosh --quiet --eval '
+const user = process.env.MONGO_USERNAME;
+const password = process.env.MONGO_PASSWORD;
+const authSource = "admin";
+const database = "trace";
+if (!user || !password) {
+    throw new Error("Missing MongoDB environment: MONGO_USERNAME, MONGO_PASSWORD");
+}
+const authDb = db.getSiblingDB(authSource);
+const roles = [{ role: "readWrite", db: database }];
+
+if (authDb.getUser(user)) {
+    authDb.updateUser(user, { pwd: password, roles });
+    print("MongoDB user updated");
+} else {
+    authDb.createUser({ user, pwd: password, roles });
+    print("MongoDB user created");
+}
+'
+
+echo "Restarting MongoDB with authentication enabled ..."
+mongosh --quiet --eval 'db.getSiblingDB("admin").shutdownServer({ force: true })' >/dev/null 2>&1 || true
+sleep 2
+mongod --dbpath /data/db --auth --bind_ip_all --fork --logpath /var/log/mongodb.log
+
+echo "Waiting for authenticated MongoDB ..."
+until mongosh --quiet \
+    --username "$MONGO_USERNAME" \
+    --password "$MONGO_PASSWORD" \
+    --authenticationDatabase "$MONGO_AUTH_SOURCE" \
+    --eval "db.adminCommand('ping').ok" >/dev/null 2>&1; do
+    sleep 1
+done
+echo "MongoDB running with authentication ..."
+
+if [ -z "${MONGO_URI:-}" ]; then
+    export MONGO_URI="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@127.0.0.1:27017/${MONGO_DATABASE}?authSource=${MONGO_AUTH_SOURCE}"
 fi
 
 while true; do
-    echo "Starting NginxMaster ..."
+    echo "Starting trace-gui app ..."
     /trace-gui_app
     EXIT_CODE=$?
-    echo "NginxMaster exited with code $EXIT_CODE, Restarting in 1 second..."
+    echo "trace-gui app exited with code $EXIT_CODE, restarting in 1 second..."
     sleep 1
 done
