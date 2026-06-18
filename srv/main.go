@@ -17,7 +17,6 @@ var webEmbedFs embed.FS
 func main() {
 
 	router := gin.Default()
-	router.ContextWithFallback = true
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
