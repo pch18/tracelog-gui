@@ -19,8 +19,8 @@ var (
 	Mongo_Collection_Name = "log"
 )
 
-const logDbUri = "mongodb://trace:sP8cV1tR2oY0mJ0h@trace.easit.jp:27017/trace?authSource=trace"
-const mongoLogRetentionSeconds int32 = 365 * 24 * 60 * 60
+const logDbUri = "mongodb://trace:sP8cV1tR2oY0mJ0h@127.0.0.1:27017/trace?authSource=trace"
+const mongoLogRetentionSeconds int32 = 90 * 24 * 60 * 60
 
 func init() {
 	var err error
